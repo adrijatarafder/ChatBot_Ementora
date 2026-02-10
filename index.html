@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ementora AI Chatbot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #d9dee6;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #chatbot-container {
+      width: 400px;
+      height: 600px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #chat-header {
+      background: #195fa2;
+      color: white;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #chat-header::before {
+      content: "🤖";
+      margin-right: 10px;
+    }
+
+    #chat-log {
+      flex: 1;
+      padding: 16px;
+      background: #f9fbfe;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 16px;
+      max-width: 80%;
+      position: relative;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .user-message {
+      background: #195fa2;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bot-message {
+      background: #e7f0fa;
+      color: #333;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .timestamp {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    #chat-input-container {
+      display: flex;
+      padding: 12px;
+      border-top: 1px solid #ddd;
+      background: #fff;
+    }
+
+    #chat-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    #send-button {
+      background: #195fa2;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      margin-left: 8px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+
+    #send-button:hover {
+      background: #144d84;
+    }
+
+    .loading-indicator {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: #888;
+      border-radius: 50%;
+      animation: blink 1.2s infinite;
+      margin-right: 4px;
+    }
+
+    .loading-indicator:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .loading-indicator:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+      0%, 80%, 100% {
+        opacity: 0.2;
+      }
+      40% {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="chatbot-container">
+  <div id="chat-header">ToraBot</div>
+  <div id="chat-log"></div>
+  <div id="chat-input-container">
+    <input type="text" id="chat-input" placeholder="Ask me anything :)" />
+    <button id="send-button">Send</button>
+  </div>
+</div>
+
+
+<script>
+  const chatLog = document.getElementById('chat-log');
+  const chatInput = document.getElementById('chat-input');
+  const sendButton = document.getElementById('send-button');
+
+  function appendMessage(content, className) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${className}`;
+    messageDiv.innerHTML = content;
+    chatLog.appendChild(messageDiv);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const userInput = chatInput.value.trim();
+    if (!userInput) return;
+
+    appendMessage(userInput, 'user-message');
+    chatInput.value = '';
+
+    const loadingMsg = document.createElement('div');
+    loadingMsg.className = 'message bot-message loading';
+    loadingMsg.innerText = 'Typing...';
+    chatLog.appendChild(loadingMsg);
+    chatLog.scrollTop = chatLog.scrollHeight;
+
+    try {
+      const res = await fetch('http://localhost:3000/chat', {
+
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userInput })
+      });
+
+      const data = await res.json();
+      chatLog.removeChild(loadingMsg);
+      appendMessage(data.reply, 'bot-message');
+    } catch (error) {
+      chatLog.removeChild(loadingMsg);
+      appendMessage("⚠️ Sorry, something went wrong. Try again later.", 'bot-message');
+    }
+  }
+
+  sendButton.addEventListener('click', sendMessage);
+  chatInput.addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') sendMessage();
+  });
+</script>
+
+</body>
+</html>
